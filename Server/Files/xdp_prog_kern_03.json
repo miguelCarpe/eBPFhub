@@ -1,0 +1,7 @@
+{
+	"description":"Description of xdp_prog_kern_03.",
+	"maps":["tx_port", "redirect_params"],
+	"date":"25/04/2024",
+	"version":"1.0.1",
+	"sources":"executable1.exe, executable2.exe"
+}
