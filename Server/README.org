@@ -5,6 +5,6 @@ This repository contains the server application that serves client requests and 
 - [[lib/libxdp/][lib/libxdp/]] - the =libxdp= library itself - can be built standalone using =make libxdp=
 - [[headers/xdp/][headers/xdp/]] - reusable eBPF code snippets for XDP (installed in /usr/include/xdp by =make install=).
 - [[lib/util/][lib/util/]] - common code shared between the different utilities
-- lib/libbpf/ - a git submodule with [[https://github.com/libbpf/libbpf][libbpf]], used if the system version is not recent enough
+- [[lib/libbpf/]] - a git submodule with [[https://github.com/libbpf/libbpf][libbpf]], used if the system version is not recent enough
 - [[main/repoExt.py]] - Server application that serves client requests
 - [[Files/]] - External repository where users upload and download eBPF applications
