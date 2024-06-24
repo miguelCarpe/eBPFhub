@@ -1,0 +1,10 @@
+* repoExt.py
+
+Server application that serves client requests. It is ready to
+handle the following requests:
+- Download a specific file, an executable, or all files related to an eBPF program.
+- Upload files.
+- Obtain file information.
+- List files.
+- Delete files.
+In order for the client application to interact with the server, the server must be running.
