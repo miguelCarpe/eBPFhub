@@ -1,0 +1,16 @@
+* eBPFhub.py
+
+The main console aplication for the client. The main
+tasks that the client will be able to perform are:   
+- Display a guide with information about the arguments presented by the eBPF
+  application manager.
+- Download files from the external repository.
+- Upload files to the external repository.
+- Delete files from the external repository and the local repository.
+- List the files in the external repository and the local repository.
+- Load eBPF functions.
+- Get information about which functions are loaded.
+- Remove loaded eBPF functions.
+- Compile eBPF files.
+- Get information about any file that is in both the external and local repositories.
+To start learning about the application's available commands and how to use them, it is recommended to use the --help command.
