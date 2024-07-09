@@ -26,7 +26,8 @@ def enablePrinting():
 # Funcion to upload a file to the external repository
 def uploadFile(fichero):
     if (fileExists(fichero)):
-# To upload a file we have to create a dictionary with the name File as the clue, and the open File as the content        file = {fichero: open("../Files/" + fichero, "rb")}
+# To upload a file we have to create a dictionary with the name File as the clue, and the open File as the content        
+        file = {fichero: open("../Files/" + fichero, "rb")}
         url = "http://localhost:8000/upload/" + fichero
         result = requests.post(url, files=file)
         if result.status_code==200:
