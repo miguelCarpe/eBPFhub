@@ -201,7 +201,7 @@ def deleteLocalFile(fichero):
         else:
             print(fichero + " is not in the local repository")
     except subprocess.CalledProcessError:
-        print("There has been an error removing " + fichero)
+        print("There was an error deleting " + fichero)
 
 # Function to remove a file from the external repository
 def deleteExternalFile(fichero):
