@@ -6,31 +6,27 @@ import zipfile
 import time
 import json
 
-def existeFicheroLocal(fichero):
-    # Cogemos el fichero y le añadimos un .c para compilarlo
-    # ficheroFinal = fichero + ".c"
+# Function to check if a file is in the local repository
+def fileExists(fichero):
     ficheroFinal = fichero
-    # Obtenemos el directorio actual
-    # repositorioLocal = "/home/miguel/Escritorio/repoLocal/Files"
     repositorioLocal = "../Files"
-    # Unimos el directorio actual al nombre del fichero .c para hacer la ruta completa
+    # Join the local repository with the file
     rutaArchivo = os.path.join(repositorioLocal, ficheroFinal)
-    # Devolvemos True si se encuentra
+    # True if it is in the local repository
     return os.path.isfile(rutaArchivo)
 
-#Deshabilitar la impresión
-def bloquear_impresion():
+# Function to disable printing
+def disablePrinting():
     sys.stdout = open(os.devnull, 'w')
 
-# Restaurar la impresión
-def habilitar_impresion():
+# Function to enable printing
+def enablePrinting():
     sys.stdout = sys.__stdout__
 
-def subirArchivo(fichero):
-#Comprobamos si el archivo existe en el repositorio local
-    if (existeFicheroLocal(fichero)):
-        #Para subir un archivo es necesario un diccionario cuya clave es el nombre del arvhivo, y el contenido es el archivo abierto
-        file = {fichero: open("../Files/" + fichero, "rb")}
+# Funcion to upload a file to the external repository
+def uploadFile(fichero):
+    if (fileExists(fichero)):
+# To upload a file we have to create a dictionary with the name File as the clue, and the open File as the content        file = {fichero: open("../Files/" + fichero, "rb")}
         url = "http://localhost:8000/upload/" + fichero
         result = requests.post(url, files=file)
         if result.status_code==200:
@@ -42,8 +38,8 @@ def subirArchivo(fichero):
     else:
         print(fichero + " is not found in the local repository.")
 
-
-def descargarArchivo(fichero):
+# Function to download a file from the external repository
+def downloadFile(fichero):
     url = "http://localhost:8000/download/" + fichero
     result = requests.get(url)
     if 200 == result.status_code:
@@ -59,7 +55,8 @@ def descargarArchivo(fichero):
         print(fichero + " is not found in the external repository.")
         return False
 
-def descargarTodosArchivos(archivo):
+# Function to download all related files from the external repository
+def downloadComplete(archivo):
     url = "http://localhost:8000/downloadAll/" + archivo
     result = requests.get(url)
     if result.status_code == 200:
@@ -74,7 +71,8 @@ def descargarTodosArchivos(archivo):
     else:
         print(f"Error al descargar {archivo}: {result.status_code}")
 
-def descargarEjecutable(fichero):
+# Function to download an executable object of a file
+def downloadExecutable(fichero):
     url = "http://localhost:8000/downloadExecutable/" + fichero
     result = requests.get(url)
     nombreFichero = fichero
@@ -88,17 +86,16 @@ def descargarEjecutable(fichero):
                 ff.write(result.content)
                 print(fichero + " succesfully downloaded")
                 #Eliminamos los archivos .ll y .o que se han generado en el servidor
-                bloquear_impresion()
-                borrarArchivoExterno(nombreFichero + ".ll")
-                borrarArchivoExterno(nombreFichero + ".o")
-                habilitar_impresion()
+                disablePrinting()
+                deleteExternalFile(nombreFichero + ".ll")
+                deleteExternalFile(nombreFichero + ".o")
+                enablePrinting()
                 return True
     else:
         print("No se ha encontrado el fichero en el repositorio Externo")
         return False
 
-
-
+# Function to modify the Makefile
 def modMake(makefile, fichero):
     try:
         with open(makefile, 'r') as ficheroEntrada:
@@ -117,13 +114,12 @@ def modMake(makefile, fichero):
     except FileNotFoundError:
         print("Archivo no encontrado")
 
-
-#Funcion para modificar el archivo en caso de tener mapas
-def modFichero(fichero):
+# Function to modify the file it has maps
+def modFile(fichero):
     #Lo primero que tenemos que saber es si tiene mapas. 
     fichjson = fichero.rstrip(fichero[-2:])
     fichjson = fichjson + ".json"
-    if (existeFicheroLocal(fichjson)):
+    if (fileExists(fichjson)):
         fichjson = os.path.join("../Files", fichjson)
         fichero = os.path.join("../Files", fichero)
         with open(fichjson, "r") as ficheroDescr:
@@ -152,11 +148,10 @@ def modFichero(fichero):
                         else:
                             ficheroFinal.write(line)
             else:
-                print("Ya esta la declaracion hecha")
-                                               
+                print("Ya esta la declaracion hecha")                                               
 
-
-def compilar_makefile(fichero):
+# Function to compile the Makefile
+def compileMakefile(fichero):
     try:
         # Ejecuta el comando 'make' en la terminal
         subprocess.run(["make", "-C", "../Files"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
@@ -164,8 +159,8 @@ def compilar_makefile(fichero):
     except subprocess.CalledProcessError:
         print("Error al compilar el makefile. Asegúrate de que 'make' esté instalado en tu sistema.")
 
-
-def listarTodoRepoLocal():
+# Function to list all files in the local repository
+def listAllLocalRepos():
     try:
         archivos = []
         for archivo in os.listdir("../Files"):
@@ -173,8 +168,8 @@ def listarTodoRepoLocal():
     except subprocess.CalledProcessError:
         print("Error al listar los archivos del repositorio local")
 
-
-def listarRepoLocal():
+# Function to list .c files in the local repository
+def listLocalRepo():
     archivos = []
     for archivo in os.listdir("../Files"):
         if archivo.endswith(".c"):
@@ -183,46 +178,46 @@ def listarRepoLocal():
     for archivoc in archivos:
         print(archivoc)
 
-
-def listarTodoRepoExterno():
+# Function to list all files from the external repository
+def listAllExternalRepos():
     url = "http://localhost:8000/listall"
     result = requests.get(url)
     print(result.text)
 
-
-def listarRepoExterno():
+# Function to list .c files from the external repository
+def listExternalRepo():
     url = "http://localhost:8000/list"
     result = requests.get(url)
     archivos = json.loads(result.text)
     for archivo in archivos:
         print(archivo)
     
-
-
-def borrarArchivoLocal(fichero):
+# Function to remove a file from the local repository
+def deleteLocalFile(fichero):
     try:
-        if(existeFicheroLocal(fichero)):
+        if(fileExists(fichero)):
             subprocess.run(["rm", "../Files/" + fichero], check=True)
             print(fichero + " successfully deleted from the local repository.")
         else:
             print(fichero + " is not in the local repository")
     except subprocess.CalledProcessError:
-        print("Error al borrar " + fichero)
+        print("There has been an error removing " + fichero)
 
-
-def borrarArchivoExterno(fichero):
+# Function to remove a file from the external repository
+def deleteExternalFile(fichero):
     url = "http://localhost:8000/remove/" + fichero
     result = requests.get(url)
     print(result.text)
 
-def cargarFuncion(hook, cargador, interfaz, programa, opcion, secprog):
+# Function to load an eBPF program
+def loadFunction(hook, cargador, interfaz, programa, opcion, secprog):
     extraSources = False
     fichjson = programa.rstrip(programa[-2:])
     fichjson = fichjson + ".json"
     #Para poder gestionar el pinneo de mapas
     nombrePrograma = programa
     programa = os.path.join("../Files", programa)
-    if (existeFicheroLocal(fichjson)):
+    if (fileExists(fichjson)):
         fichjson = os.path.join("../Files", fichjson)
         with open(fichjson, "r") as ficheroDescr:
             informacion = json.load(ficheroDescr)
@@ -266,7 +261,7 @@ def cargarFuncion(hook, cargador, interfaz, programa, opcion, secprog):
                     else:
                         subprocess.run(["sudo", "../Files/xdp-loader", "load", interfaz, programa, "-n", secprog,  "--pin-path", "/sys/fs/bpf/" + nombrePrograma.rstrip(nombrePrograma[-2:])], check=True)
                     if(extraSources == True):
-                        print("SThe eBPF program has been loaded successfully, read the description to finish the configuration")
+                        print("The eBPF program has been loaded successfully, read the description to finish the configuration")
                     else:
                         print("The eBPF program has been loaded successfully")
                 else:
@@ -278,8 +273,8 @@ def cargarFuncion(hook, cargador, interfaz, programa, opcion, secprog):
     else:
         print("The" + hook +  " hook is not yet implemented in this version of the software")
 
-
-def functionStatus(hook, cargador,interfaz):
+# Function to view the loaded eBPF functions
+def getFunctionStatus(hook, cargador,interfaz):
     if (hook == "xdp"):
         if (cargador == "xdp-loader"):
             try:
@@ -297,9 +292,8 @@ def functionStatus(hook, cargador,interfaz):
     else:
         print("The" + hook +  " hook is not yet implemented in this version of the software")
 
-
-
-def quitarFuncion(hook, cargador, interfaz, id):
+# Function to unload an eBPF function
+def unloadFunction(hook, cargador, interfaz, id):
     if (hook == "xdp"):
         if (cargador == "xdp-loader"):
             try:
@@ -316,10 +310,10 @@ def quitarFuncion(hook, cargador, interfaz, id):
     else:
         print("The" + hook +  " hook is not yet implemented in this version of the software")
 
-#funcion para obtener la informacion de un programa eBPF
-def infoProgram(archivo):
+# Function to show information about a file
+def infoFile(archivo):
     fichjson = archivo + ".json"
-    if (existeFicheroLocal(fichjson)):
+    if (fileExists(fichjson)):
         fichjson = os.path.join("../Files", fichjson)
         with open(fichjson, "r") as ficheroDescr:
             informacion = json.load(ficheroDescr)
@@ -339,32 +333,32 @@ def infoProgram(archivo):
         else:
             print("Error de conexion")
 
-
-def crearInterfaz(nombre):
+# Function to create a virtual interface with te testnev tool
+def createInterface(nombre):
     try:
         subprocess.run(["sudo", "../testenv/testenv.sh", "setup", "--name", nombre], check=True)
     except subprocess.CalledProcessError:
         print("Error al crear la interfaz " + nombre)
 
-
+# Function to download (if it is needed), compile and load an eBPF function
 def run(hook, cargador, interfaz, programa, opcion, secprog):
     #primero vemos si el archivo se encuentra en el directorio
-    descargarTodosArchivos(programa)
+    downloadComplete(programa)
     if(hook == "xdp"):
         if (cargador == "xdp-loader"):
             nombreProgramaC = programa + ".c"
             nombreProgramaO = programa + ".o"
             modMake("../Files/Makefile", nombreProgramaC)
-            modFichero(nombreProgramaC)
-            compilar_makefile(nombreProgramaC)
-            cargarFuncion(hook, cargador, interfaz, nombreProgramaO, opcion, secprog)
+            modFile(nombreProgramaC)
+            compileMakefile(nombreProgramaC)
+            loadFunction(hook, cargador, interfaz, nombreProgramaO, opcion, secprog)
         else:
             print("The " + cargador +  " loader is not yet implemented in this version of the software")
     else:
         print("The" + hook +  " hook is not yet implemented in this version of the software")
     
-
-def ayudaPrograma():
+# Function to show information about eBPF Hub
+def helpProgram():
    print("Available options:" + "\n"
         + "     -u: upload files to an external repository" + "\n"
         + "     -rl: remove files from the local repository" + "\n"
@@ -398,7 +392,6 @@ def ayudaPrograma():
         + "         -h: eBPF hook" + "\n"
         + "         -if: eBPF Program Loading Interface (if needed)" + "\n"
         + "         --loader: function loader" + "\n"
-        + "         -p: program to load" + "\n"
         + "             --section: ELF section name of the program to load" + "\n"
         + "             --progname: BPF program name of the program to load" + "\n"
 
@@ -410,95 +403,95 @@ if __name__== "__main__":
 
     opcionValida = False
 
+    # Argument used for create a virtual interface with the testnev tool
     if ("-ni" in sys.argv):
         opcionValida = True
         indexInterfaz = sys.argv.index("-ni")
         indexInterfaz = indexInterfaz + 1
-        crearInterfaz(sys.argv[indexInterfaz]) 
+        createInterface(sys.argv[indexInterfaz]) 
 
-    #Argumento utilizado para subir archivos al repositorio externo
+    # Argument used for upload a file to an external repository
     if ("-u" in sys.argv):
         opcionValida = True
         indexUpload = sys.argv.index("-u")
         fichero = sys.argv[indexUpload + 1]
-        subirArchivo(fichero)
+        uploadFile(fichero)
 
-    #Argumento utilizado para eliminar un fichero en el repositorio local
+    # Argument used to remove a file from the local repository
     if ("-rl" in sys.argv):
         opcionValida = True
         indexRemove = sys.argv.index("-rl")
         fichero = sys.argv[indexRemove + 1]
-        borrarArchivoLocal(fichero)
+        deleteLocalFile(fichero)
 
-    #Argumento utilizado para eliminar un fichero en el repositorio externo
+    # Argument used to remove a file from the external repository
     if ("-re" in sys.argv):
         opcionValida = True
         indexRemove = sys.argv.index("-re")
         fichero = sys.argv[indexRemove + 1]
-        borrarArchivoExterno(fichero)
+        deleteExternalFile(fichero)
 
-    #Argumento para listar los archivos .c del repositorio local
+    # Argument used to list .c files in the local repository
     if ("-ll" in sys.argv):
         opcionValida = True
-        listarRepoLocal()
+        listLocalRepo()
 
-    #Argumento para listar todos los archivos del repositorio local
+    # Argument used to list all files in the local repository
     if ("-lla" in sys.argv):
         opcionValida = True
-        listarTodoRepoLocal()
+        listAllLocalRepos()
     
-    #Argumento para listar los archivos del repositorio externo
+    # Argument used to list all files from the external repository
     if ("-lea" in sys.argv):
         opcionValida = True
-        listarTodoRepoExterno()
+        listAllExternalRepos()
 
-    #Argumrnyo para listar los archivos .c del repositorio externo
+    # Argument used to list .c files from the external repository
     if ("-le" in sys.argv):
         opcionValida = True
-        listarRepoExterno()
+        listExternalRepo()
 
-    #Argumento para descargar archivo del repositorio externo
+    # Argument used to download a file from the external repository
     if ("-d" in sys.argv):
         opcionValida = True
         indexDownload = sys.argv.index("-d")
         fichero = sys.argv[indexDownload + 1]
-        if (not existeFicheroLocal(fichero)):
-            descargarArchivo(fichero)
+        if (not fileExists(fichero)):
+            downloadFile(fichero)
         else:
             opcion = input(fichero + " is located in the local repository. Do you want to rewrite it? (y/N)")
             if(opcion == "Y" or opcion == "y"):
-                descargarArchivo(fichero)
+                downloadFile(fichero)
             elif(opcion == "N" or opcion=="n" or opcion == "" or opcion == " "):
                 print("The file hasn't been rewrited")
             else:
                 print ("Not supported option")
 
-            
-    #Argumento para descargar el ejecutable (compilacion arriba)
+    # Argumen used to download an exectuable object of a file
     if("-de" in sys.argv):
         opcionValida = True
         indexDownload = sys.argv.index("-de")
         fichero = sys.argv[indexDownload + 1]
         nombreObjeto = fichero + ".o"
-        if (not existeFicheroLocal(nombreObjeto)):
-            descargarEjecutable(fichero)
+        if (not fileExists(nombreObjeto)):
+            downloadExecutable(fichero)
         else:
             opcion = input(nombreObjeto + " is located in the local repository. Do you want to rewrite it? (y/N)")
             if(opcion == "Y" or opcion == "y"):
-                descargarEjecutable(fichero)
+                downloadExecutable(fichero)
             elif(opcion == "N" or opcion=="n" or opcion == "" or opcion == " "):
                 print("The object hasn't been rewrited")
             else:
                 print ("Not supported option")
 
-    #Argumento para descargar todos los archivos relacionados con un nombre dado
+    # Argument used to download all related files from the external repository
     if("-dc" in sys.argv):
         opcionValida = True
         indexDownload = sys.argv.index("-dc")
         fichero = sys.argv[indexDownload + 1]
-        descargarTodosArchivos(fichero)
+        downloadComplete(fichero)
 
-    #Argumento para ver las funciones eBPF cargadas en una interfaz
+    # Argument used to view the loaded eBPF functions
     if("-s" in sys.argv):
         opcionValida = True
         if ("-h" in sys.argv):
@@ -513,9 +506,9 @@ if __name__== "__main__":
                     if(indexLoader + 1 > len(sys.argv)): # +1 porque empieza por 0
                         print("Invalid number of arguments")
                     else:
-                        functionStatus(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz])
+                        getFunctionStatus(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz])
     
-    #Argumento para descargar una funcion dado un id
+    # Argument used to unload an eBPF function
     if("-un" in sys.argv):
         opcionValida = True
         if ("-h" in sys.argv):
@@ -530,28 +523,28 @@ if __name__== "__main__":
                 if ("--id" in sys.argv):
                     indexPrograma = sys.argv.index("--id")
                     indexPrograma = indexPrograma + 1
-                    quitarFuncion(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma])
+                    unloadFunction(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma])
                 else:
                     print("You must provide a valid ID to remove a function from the interface: " + sys.argv[indexInterfaz],)
     
-    #Argumento para compilar el fichero que queramos
+    # Argument used to compile a file
     if ("-m" in sys.argv):
         opcionValida = True
         indexMake = sys.argv.index("-m")
         fichero = sys.argv[indexMake + 1]
-        if(existeFicheroLocal(fichero)):
+        if(fileExists(fichero)):
             modMake("../Files/Makefile", fichero)
-            modFichero(fichero)
-            compilar_makefile(fichero)
+            modFile(fichero)
+            compileMakefile(fichero)
         else:
             print(fichero + " is not found in the local repository.")
 
-    #Argumento para cargar el fichero en la interfaz correspondiente        
+    # Argument used to load an eBPF program     
     if("-l" in sys.argv):
         opcionValida = True
         if ("-h" in sys.argv):
             indexHook = sys.argv.index("-h")
-            indexHook = indexHooik + 1
+            indexHook = indexHook + 1
             if ("-if" in sys.argv):
                 indexInterfaz = sys.argv.index("-if")
                 indexInterfaz = indexInterfaz + 1
@@ -565,11 +558,11 @@ if __name__== "__main__":
                     indexPrograma = indexPrograma + 1
                     if (indexPrograma + 1 <len(sys.argv)):
                         if(sys.argv[indexPrograma + 1] == "--section"):
-                            cargarFuncion(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "--section", sys.argv[indexPrograma+2])
+                            loadFunction(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "--section", sys.argv[indexPrograma+2])
                         elif(sys.argv[indexPrograma + 1] == "--progname"):
-                            cargarFuncion(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "--progname", sys.argv[indexPrograma+2])
+                            loadFunction(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "--progname", sys.argv[indexPrograma+2])
                     else:
-                        cargarFuncion(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "-", "null")
+                        loadFunction(sys.argv[indexHook], sys.argv[indexLoader], sys.argv[indexInterfaz], sys.argv[indexPrograma], "-", "null")
                 else:
                     print("Your must put a program")
             else:
@@ -577,13 +570,14 @@ if __name__== "__main__":
         else:
             print ("You must put a hook to load the program")
 
-    #Argumento para mostrar información sobre el fichero que pongamos
+    # Argument used to show information about a file
     if ("-i" in sys.argv):
         opcionValida = True
         indexarchivo = sys.argv.index("-i")
         indexarchivo = indexarchivo + 1
-        infoProgram(sys.argv[indexarchivo])
+        infoFile(sys.argv[indexarchivo])
 
+    # Argument used to download (if it is needed), compile and load an eBPF function
     if ("-a" in sys.argv):
         opcionValida = True
         indexPrograma = sys.argv.index("-a")
@@ -611,10 +605,18 @@ if __name__== "__main__":
         else:
             print ("You must put a hook to load the program")
         
-    #Argumento para mostrar las diferentes opciones posibles
+    # Argument used to show information about eBPF Hub
     if ("--help" in sys.argv):
         opcionValida = True
-        ayudaPrograma()
+        helpProgram()
 
+    # You must to put an available argument
     if(not opcionValida):
         print("Argument not available")
+
+
+
+    
+
+
+    
